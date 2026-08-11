@@ -48,7 +48,8 @@ class DiskWriterApp(ctk.CTk):
         # Varsayılan dil
         self.current_lang = "tr"
 
-        self.title(get_text(self.current_lang, "window_title"))
+        os_name = "for Windows" if os.name == 'nt' else "for Linux"
+        self.title(f"{get_text(self.current_lang, 'window_title')} {os_name} - Akby Linux")
         self.geometry("700x580")
         self.resizable(False, False)
 
@@ -177,8 +178,8 @@ class DiskWriterApp(ctk.CTk):
 
     def _refresh_ui_texts(self):
         """Tüm arayüz metinlerini mevcut dile göre güncelle"""
-        self.title(self.t("window_title"))
         os_name = "for Windows" if os.name == 'nt' else "for Linux"
+        self.title(f"{self.t('window_title')} {os_name} - Akby Linux")
         self.title_label.configure(text=f"{self.t('app_title')} {os_name}")
         self.subtitle_label.configure(text=self.t("subtitle"))
         self.iso_label.configure(text=self.t("step1_label"))

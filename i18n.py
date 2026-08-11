@@ -3,8 +3,8 @@
 
 LANGUAGES = {
     "tr": {
-        "window_title": "Disk Writer for Windows - Akby Linux",
-        "app_title": "Akby Linux Disk Writer for Windows",
+        "window_title": "Disk Writer",
+        "app_title": "Akby Linux Disk Writer",
         "subtitle": "Green Edition için USB Kurulum Medyası Hazırlayın",
         "step1_label": "1. ISO Dosyası:",
         "iso_not_selected": "Henüz bir ISO seçilmedi",
@@ -37,8 +37,8 @@ LANGUAGES = {
         "all_files": "Tüm Dosyalar",
     },
     "en": {
-        "window_title": "Disk Writer for Windows - Akby Linux",
-        "app_title": "Akby Linux Disk Writer for Windows",
+        "window_title": "Disk Writer",
+        "app_title": "Akby Linux Disk Writer",
         "subtitle": "Prepare USB Installation Media for Green Edition",
         "step1_label": "1. ISO File:",
         "iso_not_selected": "No ISO selected",
