@@ -1,0 +1,58 @@
+# .github/workflows/build-exe.yml
+# Akby Linux Disk Writer - Windows .exe Derleme
+# Bu workflow, kodu GitHub'a push'ladığınızda otomatik olarak .exe oluşturur.
+
+name: Build Windows EXE
+
+on:
+  push:
+    tags:
+      - 'v*'  # v1.0.0 gibi bir tag push'landığında çalışır
+  workflow_dispatch:  # Manuel olarak da tetiklenebilir
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Convert icon to ICO
+        run: |
+          python -c "
+          from PIL import Image
+          img = Image.open('icon.png')
+          img.save('icon.ico', format='ICO', sizes=[(256, 256), (128, 128), (64, 64), (48, 48), (32, 32), (16, 16)])
+          print('ICO dosyası oluşturuldu!')
+          "
+
+      - name: Build EXE with PyInstaller
+        run: |
+          pyinstaller --onefile --noconsole --name "DiskWriter" --icon=icon.ico --manifest=uac_manifest.xml --add-data "icon.png;." --add-data "i18n.py;." --add-data "disk_writer.py;." main.py
+
+      - name: Upload EXE Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DiskWriter-Windows
+          path: dist/DiskWriter.exe
+          retention-days: 90
+
+      - name: Create Release (on tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/DiskWriter.exe
+          name: "Disk Writer ${{ github.ref_name }}"
+          body: "Akby Linux Disk Writer for Windows - ${{ github.ref_name }}"

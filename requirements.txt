@@ -1,0 +1,5 @@
+customtkinter
+psutil
+requests
+urllib3
+Pillow
