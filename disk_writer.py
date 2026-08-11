@@ -85,13 +85,24 @@ class DiskWriter:
 
         kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
 
+        # Ctypes tanımlamaları (64-bit Handle kesilmesini önlemek için çok kritik!)
+        kernel32.CreateFileW.restype = ctypes.c_void_p
+        kernel32.CreateFileW.argtypes = [wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD, wintypes.LPVOID, wintypes.DWORD, wintypes.DWORD, wintypes.LPVOID]
+        
+        kernel32.DeviceIoControl.restype = wintypes.BOOL
+        kernel32.WriteFile.restype = wintypes.BOOL
+        kernel32.CloseHandle.restype = wintypes.BOOL
+        kernel32.FlushFileBuffers.restype = wintypes.BOOL
+
+        def is_invalid_handle(h):
+            return h in (-1, 0xFFFFFFFF, 0xFFFFFFFFFFFFFFFF, None)
+
         # ── Win32 Sabitleri ──
         GENERIC_READ = 0x80000000
         GENERIC_WRITE = 0x40000000
         FILE_SHARE_READ = 1
         FILE_SHARE_WRITE = 2
         OPEN_EXISTING = 3
-        INVALID_HANDLE_VALUE = ctypes.c_void_p(-1).value
         FSCTL_LOCK_VOLUME = 0x00090018
         FSCTL_DISMOUNT_VOLUME = 0x00090020
         IOCTL_STORAGE_GET_DEVICE_NUMBER = 0x002D1080
@@ -111,7 +122,7 @@ class DiskWriter:
             None, OPEN_EXISTING, 0, None
         )
 
-        if h_volume == INVALID_HANDLE_VALUE:
+        if is_invalid_handle(h_volume):
             error = ctypes.get_last_error()
             raise DiskWriteError(
                 f"Sürücüye erişilemedi ({volume_path}). Hata kodu: {error}\n\n"
@@ -175,7 +186,7 @@ class DiskWriter:
             None, OPEN_EXISTING, 0, None
         )
 
-        if h_drive == INVALID_HANDLE_VALUE:
+        if is_invalid_handle(h_drive):
             error = ctypes.get_last_error()
             raise DiskWriteError(f"Fiziksel sürücü açılamadı ({physical_drive}). Hata: {error}")
 
