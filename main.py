@@ -240,14 +240,25 @@ class DiskWriterApp(ctk.CTk):
                         drive_type = ctypes.windll.kernel32.GetDriveTypeW(drive_path)
                         # DRIVE_REMOVABLE = 2
                         if drive_type == 2:
+                            name = "USB Sürücü"
+                            size_str = "(Boyut okunamıyor)"
                             try:
-                                total, used, free = 0, 0, 0
                                 import shutil
                                 usage = shutil.disk_usage(drive_path)
                                 gb_size = round(usage.total / (1024**3), 1)
-                                drives.append(f"{letter}: - {gb_size} GB")
-                            except:
-                                drives.append(f"{letter}: - (Boyut okunamadı)")
+                                size_str = f"{gb_size} GB"
+                                
+                                vol_name_buf = ctypes.create_unicode_buffer(1024)
+                                if ctypes.windll.kernel32.GetVolumeInformationW(
+                                    ctypes.c_wchar_p(drive_path), vol_name_buf, 1024,
+                                    None, None, None, None, 0
+                                ):
+                                    if vol_name_buf.value:
+                                        name = vol_name_buf.value
+                            except Exception:
+                                pass
+                                
+                            drives.append(f"{letter}: - {size_str} ({name})")
                     bitmask >>= 1
             except Exception as e:
                 print(f"Windows sürücü tespiti hatası: {e}")
@@ -320,7 +331,7 @@ class DiskWriterApp(ctk.CTk):
             iso_path=self.selected_iso_path,
             target_device=selected_drive,
             progress_callback=lambda v: self.after(0, self.progress_bar.set, v),
-            status_callback=lambda m: self.after(0, self.status_label.configure, text=m, text_color="white")
+            status_callback=lambda m: self.after(0, lambda msg=m: self.status_label.configure(text=msg, text_color="white"))
         )
 
         def do_write():
