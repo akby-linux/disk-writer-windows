@@ -99,7 +99,8 @@ class DiskWriterApp(ctk.CTk):
         self.lang_combo.pack(side="left")
 
         # Başlık
-        self.title_label = ctk.CTkLabel(self.main_frame, text=self.t("app_title"), font=ctk.CTkFont(size=24, weight="bold"))
+        os_name = "for Windows" if os.name == 'nt' else "for Linux"
+        self.title_label = ctk.CTkLabel(self.main_frame, text=f"{self.t('app_title')} {os_name}", font=ctk.CTkFont(size=24, weight="bold"))
         self.title_label.pack(pady=(5, 5))
 
         self.subtitle_label = ctk.CTkLabel(self.main_frame, text=self.t("subtitle"), font=ctk.CTkFont(size=12), text_color="gray")
@@ -177,7 +178,8 @@ class DiskWriterApp(ctk.CTk):
     def _refresh_ui_texts(self):
         """Tüm arayüz metinlerini mevcut dile göre güncelle"""
         self.title(self.t("window_title"))
-        self.title_label.configure(text=self.t("app_title"))
+        os_name = "for Windows" if os.name == 'nt' else "for Linux"
+        self.title_label.configure(text=f"{self.t('app_title')} {os_name}")
         self.subtitle_label.configure(text=self.t("subtitle"))
         self.iso_label.configure(text=self.t("step1_label"))
         self.lang_label.configure(text=self.t("lang_label"))

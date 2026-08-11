@@ -1,0 +1,91 @@
+# .github/workflows/build-deb.yml
+# Akby Linux Disk Writer - Linux .deb Derleme
+# Bu workflow, kodu GitHub'a push'ladığınızda otomatik olarak Ubuntu/Debian uyumlu .deb oluşturur.
+
+name: Build Linux DEB
+
+on:
+  push:
+    tags:
+      - 'v*'  # v1.0.0 gibi bir tag push'landığında çalışır
+  workflow_dispatch:  # Manuel olarak da tetiklenebilir
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies and tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-tk ruby rubygems build-essential
+          sudo gem install fpm
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build Binary with PyInstaller
+        run: |
+          pyinstaller --onefile --noconsole --name "akby-disk-writer" --add-data "icon.png:." --add-data "i18n.py:." --add-data "disk_writer.py:." main.py
+
+      - name: Prepare DEB structure
+        run: |
+          mkdir -p deb_package/opt/akby-disk-writer
+          mkdir -p deb_package/usr/share/applications
+          mkdir -p deb_package/usr/share/pixmaps
+          
+          # Binary'yi kopyala
+          cp dist/akby-disk-writer deb_package/opt/akby-disk-writer/
+          
+          # İkonu kopyala
+          cp icon.png deb_package/usr/share/pixmaps/akby-disk-writer.png
+          
+          # .desktop dosyasını oluştur (pkexec ile Root isteyecek şekilde ayarlandı)
+          cat << 'EOF' > deb_package/usr/share/applications/akby-disk-writer.desktop
+          [Desktop Entry]
+          Name=Akby Disk Writer
+          Comment=Akby Linux USB Imager
+          Exec=pkexec /opt/akby-disk-writer/akby-disk-writer
+          Icon=akby-disk-writer
+          Terminal=false
+          Type=Application
+          Categories=Utility;System;
+          EOF
+          
+          chmod +x deb_package/usr/share/applications/akby-disk-writer.desktop
+
+      - name: Build DEB package with FPM
+        run: |
+          fpm -s dir -t deb \
+            -n akby-disk-writer \
+            -v ${{ github.ref_name || '1.0.0' }} \
+            --iteration 1 \
+            -a amd64 \
+            -m "Akby Linux <admin@akbylinux.org>" \
+            --description "Akby Linux Disk Writer for Linux" \
+            -d "python3-tk" \
+            -d "policykit-1" \
+            -C deb_package .
+
+      - name: Upload DEB Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DiskWriter-Linux
+          path: "*.deb"
+          retention-days: 90
+
+      - name: Create Release (on tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: "*.deb"
