@@ -258,6 +258,9 @@ class DiskWriterApp(ctk.CTk):
                             except Exception:
                                 pass
                                 
+                            if size_str == "(Boyut okunamıyor)":
+                                name = "Biçimlendirilmemiş / Linux USB"
+                                
                             drives.append(f"{letter}: - {size_str} ({name})")
                     bitmask >>= 1
             except Exception as e:

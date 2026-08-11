@@ -114,8 +114,9 @@ class DiskWriter:
         if h_volume == INVALID_HANDLE_VALUE:
             error = ctypes.get_last_error()
             raise DiskWriteError(
-                f"Sürücü açılamadı ({volume_path}). Hata kodu: {error}\n"
-                "Programı 'Yönetici Olarak Çalıştır' ile açın."
+                f"Sürücüye erişilemedi ({volume_path}). Hata kodu: {error}\n\n"
+                "ÖNEMLİ: Ekranda Windows'un 'Diski Biçimlendir' (Format) uyarısı varsa lütfen 'İptal'e basıp kapatın. "
+                "Ardından tekrar 'Yazdır' butonuna basmayı deneyin."
             )
 
         physical_drive_num = None
