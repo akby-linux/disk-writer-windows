@@ -55,9 +55,9 @@ jobs:
           [Desktop Entry]
           Name=Akby Disk Writer
           Comment=Akby Linux USB Imager
-          Exec=pkexec /opt/akby-disk-writer/akby-disk-writer
+          Exec=sudo -E /opt/akby-disk-writer/akby-disk-writer
           Icon=akby-disk-writer
-          Terminal=false
+          Terminal=true
           Type=Application
           Categories=Utility;System;
           EOF
