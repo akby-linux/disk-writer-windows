@@ -172,71 +172,71 @@ class DiskWriter:
                 ctypes.byref(bytes_returned), None
             )
 
+            # ── 4. Fiziksel sürücüyü yazma için aç ──
+            physical_drive = f"\\\\.\\PhysicalDrive{physical_drive_num}"
+            self._update_status(f"Fiziksel sürücü açılıyor: {physical_drive}")
+
+            h_drive = kernel32.CreateFileW(
+                physical_drive,
+                GENERIC_READ | GENERIC_WRITE,
+                FILE_SHARE_READ | FILE_SHARE_WRITE,
+                None, OPEN_EXISTING, 0, None
+            )
+
+            if is_invalid_handle(h_drive):
+                error = ctypes.get_last_error()
+                raise DiskWriteError(f"Fiziksel sürücü açılamadı ({physical_drive}). Hata: {error}")
+
+            try:
+                # ── 5. ISO dosyasını parça parça yaz ──
+                bytes_written_total = 0
+                iso_size_mb = iso_size / (1024 * 1024)
+
+                self._update_status("ISO dosyası yazılıyor...")
+
+                with open(self.iso_path, 'rb') as iso_file:
+                    while True:
+                        if self.cancelled:
+                            raise DiskWriteError("İşlem kullanıcı tarafından iptal edildi.")
+
+                        chunk = iso_file.read(CHUNK_SIZE)
+                        if not chunk:
+                            break
+
+                        # Son parçayı 512-byte sektör sınırına hizala
+                        if len(chunk) % 512 != 0:
+                            chunk += b'\x00' * (512 - len(chunk) % 512)
+
+                        bytes_written = wintypes.DWORD()
+                        result = kernel32.WriteFile(
+                            h_drive, chunk, len(chunk),
+                            ctypes.byref(bytes_written), None
+                        )
+
+                        if not result:
+                            error = ctypes.get_last_error()
+                            raise DiskWriteError(f"Yazma hatası! Hata kodu: {error}")
+
+                        bytes_written_total += bytes_written.value
+                        progress = bytes_written_total / iso_size
+                        self._update_progress(progress)
+
+                        elapsed = time.time() - self._start_time
+                        speed = self._format_speed(bytes_written_total, elapsed)
+                        written_mb = bytes_written_total / (1024 * 1024)
+                        self._update_status(
+                            f"Yazılıyor... {written_mb:.0f} MB / {iso_size_mb:.0f} MB  ({speed})"
+                        )
+
+                # Tamponu temizle
+                self._update_status("Tampon temizleniyor (sync)...")
+                kernel32.FlushFileBuffers(h_drive)
+
+            finally:
+                kernel32.CloseHandle(h_drive)
+
         finally:
             kernel32.CloseHandle(h_volume)
-
-        # ── 4. Fiziksel sürücüyü yazma için aç ──
-        physical_drive = f"\\\\.\\PhysicalDrive{physical_drive_num}"
-        self._update_status(f"Fiziksel sürücü açılıyor: {physical_drive}")
-
-        h_drive = kernel32.CreateFileW(
-            physical_drive,
-            GENERIC_READ | GENERIC_WRITE,
-            FILE_SHARE_READ | FILE_SHARE_WRITE,
-            None, OPEN_EXISTING, 0, None
-        )
-
-        if is_invalid_handle(h_drive):
-            error = ctypes.get_last_error()
-            raise DiskWriteError(f"Fiziksel sürücü açılamadı ({physical_drive}). Hata: {error}")
-
-        try:
-            # ── 5. ISO dosyasını parça parça yaz ──
-            bytes_written_total = 0
-            iso_size_mb = iso_size / (1024 * 1024)
-
-            self._update_status("ISO dosyası yazılıyor...")
-
-            with open(self.iso_path, 'rb') as iso_file:
-                while True:
-                    if self.cancelled:
-                        raise DiskWriteError("İşlem kullanıcı tarafından iptal edildi.")
-
-                    chunk = iso_file.read(CHUNK_SIZE)
-                    if not chunk:
-                        break
-
-                    # Son parçayı 512-byte sektör sınırına hizala
-                    if len(chunk) % 512 != 0:
-                        chunk += b'\x00' * (512 - len(chunk) % 512)
-
-                    bytes_written = wintypes.DWORD()
-                    result = kernel32.WriteFile(
-                        h_drive, chunk, len(chunk),
-                        ctypes.byref(bytes_written), None
-                    )
-
-                    if not result:
-                        error = ctypes.get_last_error()
-                        raise DiskWriteError(f"Yazma hatası! Hata kodu: {error}")
-
-                    bytes_written_total += bytes_written.value
-                    progress = bytes_written_total / iso_size
-                    self._update_progress(progress)
-
-                    elapsed = time.time() - self._start_time
-                    speed = self._format_speed(bytes_written_total, elapsed)
-                    written_mb = bytes_written_total / (1024 * 1024)
-                    self._update_status(
-                        f"Yazılıyor... {written_mb:.0f} MB / {iso_size_mb:.0f} MB  ({speed})"
-                    )
-
-            # Tamponu temizle
-            self._update_status("Tampon temizleniyor (sync)...")
-            kernel32.FlushFileBuffers(h_drive)
-
-        finally:
-            kernel32.CloseHandle(h_drive)
 
         self._update_progress(1.0)
         return True
