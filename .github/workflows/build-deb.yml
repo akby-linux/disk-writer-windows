@@ -36,7 +36,7 @@ jobs:
 
       - name: Build Binary with PyInstaller
         run: |
-          pyinstaller --onefile --noconsole --name "akby-disk-writer" --add-data "icon.png:." --add-data "i18n.py:." --add-data "disk_writer.py:." main.py
+          pyinstaller --onefile --noconsole --hidden-import PIL._tkinter_finder --name "akby-disk-writer" --add-data "icon.png:." --add-data "i18n.py:." --add-data "disk_writer.py:." main.py
 
       - name: Prepare DEB structure
         run: |
