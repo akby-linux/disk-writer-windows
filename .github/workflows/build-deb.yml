@@ -73,8 +73,6 @@ jobs:
             -a amd64 \
             -m "Akby Linux <admin@akbylinux.org>" \
             --description "Akby Linux Disk Writer for Linux" \
-            -d "python3-tk" \
-            -d "policykit-1" \
             -C deb_package .
 
       - name: Upload DEB Artifact
